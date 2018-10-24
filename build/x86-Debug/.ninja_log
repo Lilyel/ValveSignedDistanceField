@@ -1,8 +1,0 @@
-# ninja log v5
-38	528	561999269	CMakeFiles/ValveSignedDistanceField.dir/ImGUI/imgui_demo.cpp.obj	ed39860850397e46
-31	619	561999269	CMakeFiles/ValveSignedDistanceField.dir/ImGUI/imgui_draw.cpp.obj	bbd38678e0a91f47
-24	626	561999269	CMakeFiles/ValveSignedDistanceField.dir/ImGUI/imgui_widgets.cpp.obj	310357d4fc0e8b22
-1	959	561999270	CMakeFiles/ValveSignedDistanceField.dir/ImGUI/imgui.cpp.obj	4ca0e3061bbe88f5
-15	1188	561999270	CMakeFiles/ValveSignedDistanceField.dir/Sources/main.cpp.obj	f007ff6deca8fa9
-8	2211	561999271	CMakeFiles/ValveSignedDistanceField.dir/ImGUI/imgui-SFML.cpp.obj	834e4ebec02f847
-2212	3703	561999272	ValveSignedDistanceField.exe	e8e5c0662cacabb3
