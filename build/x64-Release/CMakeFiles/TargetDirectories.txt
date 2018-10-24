@@ -1,0 +1,3 @@
+C:/Users/Lilyel/Documents/MiscProjects/ValveSignedDistanceField/build/x64-Release/CMakeFiles/ValveSignedDistanceField.dir
+C:/Users/Lilyel/Documents/MiscProjects/ValveSignedDistanceField/build/x64-Release/CMakeFiles/edit_cache.dir
+C:/Users/Lilyel/Documents/MiscProjects/ValveSignedDistanceField/build/x64-Release/CMakeFiles/rebuild_cache.dir
