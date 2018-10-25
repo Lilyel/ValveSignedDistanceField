@@ -1,3 +1,5 @@
+#include "SDF.h"
+
 #include "imgui.h"
 #include "imgui-SFML.h"
 
@@ -14,18 +16,18 @@ enum ViewMode
 };
 
 
-enum ImageType
-{
-    Grey, // The grey channel will be used.
-    Grey_Alpha, // The alpha channel will be used.
-    AverageRGB, // An average of the R, G and B channels will be used.
-    RGBA, // Alpha channel will be used.
-};
 
 
 int main()
 {
-    const std::string DATA_PATH = "../../Data/";
+    std::string DATA_PATH;
+
+#ifdef _MSC_VER 
+    DATA_PATH = "../../Data/";
+#else
+    DATA_PATH = "../Data/";
+#endif
+
     const char paperRef[] = "Chris Green. 2007. Improved alpha-tested magnification for vector textures and special effects."
                             " In ACM SIGGRAPH 2007 courses (SIGGRAPH '07). ACM, New York, NY, USA, 9-18."
                             " DOI: https://doi.org/10.1145/1281500.1281665";
@@ -37,14 +39,15 @@ int main()
 
     ImGui::SFML::Init( window );
 
-    ImGuiStyle& imGuiStyle = ImGui::GetStyle();
-
-
+#ifdef HIGH_DPI
     ImGui::GetIO().FontGlobalScale = 2.0f;
-    imGuiStyle.ScaleAllSizes( 2.0f );
-
+    ImGui::GetStyle().ScaleAllSizes( 2.0f );
+#endif
 
     sf::Clock deltaClock;
+
+    SDF sdf;
+    sdf.Init( DATA_PATH );
 
     sf::Texture sourceTexture;
     sourceTexture.loadFromFile( DATA_PATH + "ExampleSDF.jpg" );
@@ -88,7 +91,6 @@ int main()
 
         ImGui::SFML::Update( window, deltaClock.restart() );
 
-        const sf::Vector2u& windowSize = window.getSize();
 
         /********************************************************/
         /***             Retrieve user settings               ***/
@@ -125,15 +127,26 @@ int main()
             ImGui::TextWrapped( paperRef );
 
             if( ImGui::Button( "Copy" ) )
-                ImGui::SetClipboardText( paperRef ); ImGui::SameLine();
+            {
+                ImGui::SetClipboardText( paperRef ); 
+                ImGui::SameLine();
+            }
             if( ImGui::Button( "Copy author and title" ) )
-                ImGui::SetClipboardText( paperRefShort ); ImGui::SameLine();
+            {
+                ImGui::SetClipboardText( paperRefShort ); 
+                ImGui::SameLine();
+            }
             if( ImGui::Button( "Close" ) )
                 ImGui::CloseCurrentPopup();
 
             ImGui::EndChild();
             ImGui::EndPopup();
         }
+
+        ImGui::Separator();
+
+        if( ImGui::Button( "Apply" ) )
+            sdf.Process();
 
         ImGui::End();
 
