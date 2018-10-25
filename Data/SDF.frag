@@ -16,7 +16,7 @@ float GetPixelToProcess( vec4 _pixel )
 	if( imageType < 0 || imageType > 3 )
 		return 0.0;
 
-	vec4 channels = vec4( _pixel.x, _pixel.w, ( _pixel.x + _pixel.y + _pixel.z ) / 3.0, _pixel.w );
+	vec4 channels = vec4( _pixel.r, _pixel.a, ( _pixel.r + _pixel.g + _pixel.b ) / 3.0, _pixel.a );
 
 	return channels[imageType];
 }
@@ -30,21 +30,21 @@ void SetPixelToProcess( out vec4 newPixel, vec4 _pixel, float pixelDistance )
 	}
 
 	if( imageType == 0 )
-		newPixel = vec4( pixelDistance, pixelDistance, pixelDistance, _pixel.w );
+		newPixel = vec4( pixelDistance, pixelDistance, pixelDistance, _pixel.a );
 
 	else if( imageType == 1 )
-		newPixel = vec4( _pixel.xyz, pixelDistance );
+		newPixel = vec4( _pixel.rgb, pixelDistance );
 
 	else if( imageType == 2 )
 	{
-		newPixel.x = _pixel.x / 3.0 * pixelDistance;
-		newPixel.y = _pixel.y / 3.0 * pixelDistance;
-		newPixel.z = _pixel.z / 3.0 * pixelDistance;
-		newPixel.w = _pixel.w;
+		newPixel.x = _pixel.r / 3.0 * pixelDistance;
+		newPixel.y = _pixel.g / 3.0 * pixelDistance;
+		newPixel.z = _pixel.b / 3.0 * pixelDistance;
+		newPixel.w = _pixel.a;
 	}
 	
 	else if( imageType == 2 )
-		newPixel = vec4( _pixel.xyz, pixelDistance );
+		newPixel = vec4( _pixel.rgb, pixelDistance );
 
 }
 
@@ -80,17 +80,17 @@ float GetDistanceToNearestOut( vec2 texCoord )
 	{
 		for( int j = minArea.y; j < maxArea.y; j++ )
 		{
-			vec2 uvToTest = GetUVNormalized( i, j, size );
-			channelToTest = GetPixelToProcess( texture2D( sourceTexture, uvToTest ) );
+			// Process manhatan distance.
+			float currentDistance = pow( float(i) - float(texCoordInPix.x), 2.0 ) + pow( float(j) - float(texCoordInPix.y), 2.0 );
 
-			// Test only if it is outside the shape.
-			// By logic, we should test <= IN_THRESHOLD, but it doesn't seems to work well...
-			if( channelToTest <= 0.0 )
+			// If the distance is better, check if that the pixel is outside the shape.
+			if( currentDistance < shortestDistance )
 			{
-				// Process manhatan distance.
-				float currentDistance = pow( float(i) - float(texCoordInPix.x), 2.0 ) + pow( float(j) - float(texCoordInPix.y), 2.0 );
+				vec2 uvToTest = GetUVNormalized( i, j, size );
+				channelToTest = GetPixelToProcess( texture2D( sourceTexture, uvToTest ) );
 
-				if( currentDistance < shortestDistance )
+				// By logic, we should test <= IN_THRESHOLD, but it doesn't seems to work well...
+				if( channelToTest <= 0.0 )
 					shortestDistance = currentDistance;
 			}
 		}
@@ -121,18 +121,18 @@ bool GetDistanceToNearestIn( out vec4 nearestColor, out float toNearestDistance,
 	{
 		for( int j = minArea.y; j < maxArea.y; j++ )
 		{
-			vec2 uvToTest = GetUVNormalized( i, j, size );
-			vec4 pixelToTest = texture2D( sourceTexture, uvToTest );
-			channelToTest = GetPixelToProcess( pixelToTest );
+			// Process manhatan distance.
+			float currentDistance = pow( float(i) - float(texCoordInPix.x), 2.0 ) + pow( float(j) - float(texCoordInPix.y), 2.0 );
 
-			// Test only if it is inside the shape.
-			if( channelToTest >= IN_THRESHOLD )
+			// If the distance is better, check if that the pixel is inside the shape.
+			if( currentDistance < toNearestDistance )
 			{
-				// Process manhatan distance.
-				float currentDistance = pow( float(i) - float(texCoordInPix.x), 2.0 ) + pow( float(j) - float(texCoordInPix.y), 2.0 );
+				vec2 uvToTest = GetUVNormalized( i, j, size );
+				vec4 pixelToTest = texture2D( sourceTexture, uvToTest );
+				channelToTest = GetPixelToProcess( pixelToTest );
 
-				if( currentDistance < toNearestDistance )
-				{
+				if( channelToTest >= IN_THRESHOLD )
+				{				
 					toNearestDistance = currentDistance;
 					// Save also the color to preserve image color and not generating white edges.
 					nearestColor = pixelToTest;

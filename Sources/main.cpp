@@ -51,10 +51,16 @@ int main()
     sf::Sprite sourceSprite( sourceTexture );
 
     sf::Shader sdfShader;
-    sdfShader.loadFromFile( DATA_PATH + "SDF.glsl.vert", DATA_PATH + "SDF.glsl.frag" );
+    sdfShader.loadFromFile( DATA_PATH + "Default.vert", DATA_PATH + "SDF.frag" );
 
     sf::RenderStates sdfRenderStates;
     sdfRenderStates.shader = &sdfShader;
+
+    sf::Shader smoothShader;
+    smoothShader.loadFromFile( DATA_PATH + "Default.vert", DATA_PATH + "Smooth.frag" );
+
+    sf::RenderStates smoothRenderStates;
+    smoothRenderStates.shader = &smoothShader;
 
     sf::RenderTexture fboDistanceField;
     sf::RenderTexture fboResized;
@@ -148,12 +154,40 @@ int main()
         // and the result will be stored in the FBO texture.
         fboDistanceField.draw( sourceSprite, sdfRenderStates );
         fboDistanceField.display();
+        
+        sf::Sprite distanceFieldSprite( fboDistanceField.getTexture() );
 
         /********************************************************/
         /***           Resize Signed Distance Field           ***/
         /********************************************************/
 
+        const float resizeFactorInv = 1.0f / static_cast<float>( resizeFactor );
+        distanceFieldSprite.setScale( resizeFactorInv, resizeFactorInv );
+        
+        sf::Vector2f resizedSpriteSize( static_cast<sf::Vector2f>( sourceSize ) * resizeFactorInv );
+        // Can't create a texture with size 0 x 0.
+        resizedSpriteSize.x = std::max( resizedSpriteSize.x, 1.0f );
+        resizedSpriteSize.y = std::max( resizedSpriteSize.y, 1.0f );
+        
+        fboResized.create( static_cast<unsigned int>( resizedSpriteSize.x), static_cast<unsigned int>( resizedSpriteSize.y ) );
+        fboResized.clear( sf::Color::Transparent );
+        fboResized.draw( distanceFieldSprite );
+        fboResized.display();
 
+        sf::Sprite spriteResize( fboResized.getTexture() );
+
+        /********************************************************/
+        /***              Final Result (Smoothed)             ***/
+        /********************************************************/
+
+        smoothShader.setUniform( "sourceTexture", sf::Shader::CurrentTexture );
+        smoothShader.setUniform( "imageType", imageType );
+        smoothShader.setUniform( "smoothing", 1.0f / smoothing );
+
+        fboAlphaTested.create( static_cast<unsigned int>( resizedSpriteSize.x ), static_cast<unsigned int>( resizedSpriteSize.y ) );
+        fboAlphaTested.clear( sf::Color::Transparent );
+        fboAlphaTested.draw( spriteResize, smoothRenderStates );
+        fboAlphaTested.display();
 
 
         /********************************************************/
@@ -170,7 +204,7 @@ int main()
         ImGui::End();
 
 
-        sf::Sprite processedSprite( fboDistanceField.getTexture() );
+        sf::Sprite processedSprite( fboAlphaTested.getTexture() );
         processedSprite.setScale( zoomProcessed / 100.0f, zoomProcessed / 100.0f );
         
         ImGui::Begin( "Processed Picture" );
