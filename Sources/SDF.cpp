@@ -28,8 +28,27 @@ void SDF::SetTexture( const std::string& fileName )
 {
     m_sourceTexture.loadFromFile( fileName );
     m_sourceSize = m_sourceTexture.getSize();
+    m_sourceSprite.setTexture( m_sourceTexture, true );
 
     ResetFBOsToSourceTexture();
+}
+
+sf::Sprite& SDF::GetSourceSprite()
+{
+    return m_sourceSprite;
+}
+
+sf::Sprite& SDF::GetSDFSprite()
+{
+    return m_sdfSprite;
+}
+sf::Sprite& SDF::GetResizeSprite()
+{
+    return m_resizeSprite;
+}
+sf::Sprite& SDF::GetAlphaSprite()
+{
+    return m_alphaTestedSprite;
 }
 
 void SDF::Process()
@@ -54,6 +73,8 @@ void SDF::ProcessDistanceField()
 
     if( !m_sdfFBO.generateMipmap() )
         std::cerr << "Failed to generate SDF mipmap." << std::endl;
+
+    m_sdfSprite.setTexture( m_sdfFBO.getTexture(), true );
 }
 
 void SDF::ProcessResize()
@@ -66,6 +87,8 @@ void SDF::ProcessResize()
     // and the result will be stored in the FBO texture.
     m_resizeFBO.draw( m_sdfSprite, m_resizeRenderStates );
     m_resizeFBO.display();
+
+    m_resizeSprite.setTexture( m_resizeFBO.getTexture(), true );
 }
 
 void SDF::ProcessAlphaTest()
@@ -79,6 +102,8 @@ void SDF::ProcessAlphaTest()
     // and the result will be stored in the FBO texture.
     m_alphaTestedFBO.draw( m_resizeSprite, m_alphaTestedStates );
     m_alphaTestedFBO.display();
+
+    m_alphaTestedSprite.setTexture( m_alphaTestedFBO.getTexture(), true );
 }
 
 
@@ -89,8 +114,4 @@ void SDF::ResetFBOsToSourceTexture()
     m_sdfFBO.create( textureSize.x, textureSize.y );
     m_resizeFBO.create( textureSize.x, textureSize.y );
     m_alphaTestedFBO.create( textureSize.x, textureSize.y );
-
-    m_sdfSprite.setTexture( m_sdfFBO.getTexture() );
-    m_resizeSprite.setTexture( m_resizeFBO.getTexture() );
-    m_alphaTestedSprite.setTexture( m_alphaTestedFBO.getTexture() );
 }

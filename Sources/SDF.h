@@ -23,6 +23,12 @@ public:
 
     void Process();
 
+    sf::Sprite& GetSourceSprite();
+
+    sf::Sprite& GetSDFSprite();
+    sf::Sprite& GetResizeSprite();
+    sf::Sprite& GetAlphaSprite();
+
 private:
     void ProcessDistanceField();
     void ProcessResize();

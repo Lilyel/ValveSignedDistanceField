@@ -7,6 +7,7 @@
 #include <SFML/Graphics.hpp>
 
 #include <string>
+#include <functional>
 
 enum ViewMode
 {
@@ -48,35 +49,16 @@ int main()
 
     SDF sdf;
     sdf.Init( DATA_PATH );
+    sdf.SetTexture( DATA_PATH + "WhySoSerious1024.png" );
 
-    sf::Texture sourceTexture;
-    sourceTexture.loadFromFile( DATA_PATH + "ExampleSDF.jpg" );
-    sf::Sprite sourceSprite( sourceTexture );
+    char fileName[100];
 
-    sf::Shader sdfShader;
-    sdfShader.loadFromFile( DATA_PATH + "Default.vert", DATA_PATH + "SDF.frag" );
-
-    sf::RenderStates sdfRenderStates;
-    sdfRenderStates.shader = &sdfShader;
-
-    sf::Shader smoothShader;
-    smoothShader.loadFromFile( DATA_PATH + "Default.vert", DATA_PATH + "Smooth.frag" );
-
-    sf::RenderStates smoothRenderStates;
-    smoothRenderStates.shader = &smoothShader;
-
-    sf::RenderTexture fboDistanceField;
-    sf::RenderTexture fboResized;
-    sf::RenderTexture fboAlphaTested;
-
+    int viewMode = ViewMode::AlphaTested;
     int zoomOriginal = 100;
     int zoomProcessed = 100;
-    float spread = 20.0f;
-    float smoothing = 64.0f;
-    int resizeFactor = 3;
-    int viewMode = ViewMode::AlphaTested;
-    int imageType = ImageType::RGBA;
+    bool autoApply = false;
 
+    sf::RenderTexture processedFBO;
 
     while( window.isOpen() )
     {
@@ -97,17 +79,26 @@ int main()
         /********************************************************/
         ImGui::Begin( "Settings" );
 
-        ImGui::Text( "Image Type" );
-        ImGui::RadioButton( "Grey (grey channel will be used)", &imageType, ImageType::Grey );
-        ImGui::RadioButton( "Grey + Alpha (Alpha channel will be used)", &imageType, ImageType::Grey_Alpha );
-        ImGui::RadioButton( "RGB (Average of the R, G and B channel wil be used)", &imageType, ImageType::AverageRGB );
-        ImGui::RadioButton( "RGBA (Alpha channel will be used)", &imageType, ImageType::RGBA );
+        ImGui::Text( "File name : " );
+        ImGui::SameLine();
+        ImGui::InputText( "", fileName, 99 );
+        ImGui::SameLine();
+        if( ImGui::Button( "Load" ) )
+            sdf.SetTexture( fileName );
 
         ImGui::Separator();
 
-        ImGui::SliderFloat( "Spread", &spread, 0.0f, 100.0f );
-        ImGui::SliderFloat( "Smoothing", &smoothing, 2.0f, 128.0f );
-        ImGui::SliderInt( "Resize Factor", &resizeFactor, 1, 10 );
+        ImGui::Text( "Image Type" );
+        ImGui::RadioButton( "Grey (grey channel will be used)", &sdf.imageType, ImageType::Grey );
+        ImGui::RadioButton( "Grey + Alpha (Alpha channel will be used)", &sdf.imageType, ImageType::Grey_Alpha );
+        ImGui::RadioButton( "RGB (Average of the R, G and B channel wil be used)", &sdf.imageType, ImageType::AverageRGB );
+        ImGui::RadioButton( "RGBA (Alpha channel will be used)", &sdf.imageType, ImageType::RGBA );
+
+        ImGui::Separator();
+
+        ImGui::SliderFloat( "Spread", &sdf.spread, 0.0f, 100.0f );
+        ImGui::SliderFloat( "Smoothing", &sdf.smoothing, 2.0f, 128.0f );
+        ImGui::SliderInt( "Resize Factor", &sdf.resizeFactor, 1, 10 );
 
         ImGui::Separator();
 
@@ -145,68 +136,20 @@ int main()
 
         ImGui::Separator();
 
-        if( ImGui::Button( "Apply" ) )
+        ImGui::Checkbox( "Auto Apply", &autoApply );
+        ImGui::SameLine();
+        if( ImGui::Button( "Apply" ) || autoApply )
             sdf.Process();
 
         ImGui::End();
 
         /********************************************************/
-        /***          Process Signed Distance Field           ***/
-        /********************************************************/
-        const sf::Vector2u& sourceSize = sourceTexture.getSize();
-
-        sdfShader.setUniform( "sourceTexture", sf::Shader::CurrentTexture );
-        sdfShader.setUniform( "imageType", imageType );
-        sdfShader.setUniform( "spread", spread );
-        sdfShader.setUniform( "size", ( sf::Vector2i )sourceSize );
-
-        fboDistanceField.create( sourceSize.x, sourceSize.y );
-        fboDistanceField.clear( sf::Color::Transparent );
-        sourceSprite.setScale( 1.0f, 1.0f );
-        // The source picture will pass through the fragment shader
-        // and the result will be stored in the FBO texture.
-        fboDistanceField.draw( sourceSprite, sdfRenderStates );
-        fboDistanceField.display();
-        
-        sf::Sprite distanceFieldSprite( fboDistanceField.getTexture() );
-
-        /********************************************************/
-        /***           Resize Signed Distance Field           ***/
-        /********************************************************/
-
-        const float resizeFactorInv = 1.0f / static_cast<float>( resizeFactor );
-        distanceFieldSprite.setScale( resizeFactorInv, resizeFactorInv );
-        
-        sf::Vector2f resizedSpriteSize( static_cast<sf::Vector2f>( sourceSize ) * resizeFactorInv );
-        // Can't create a texture with size 0 x 0.
-        resizedSpriteSize.x = std::max( resizedSpriteSize.x, 1.0f );
-        resizedSpriteSize.y = std::max( resizedSpriteSize.y, 1.0f );
-        
-        fboResized.create( static_cast<unsigned int>( resizedSpriteSize.x), static_cast<unsigned int>( resizedSpriteSize.y ) );
-        fboResized.clear( sf::Color::Transparent );
-        fboResized.draw( distanceFieldSprite );
-        fboResized.display();
-
-        sf::Sprite spriteResize( fboResized.getTexture() );
-
-        /********************************************************/
-        /***              Final Result (Smoothed)             ***/
-        /********************************************************/
-
-        smoothShader.setUniform( "sourceTexture", sf::Shader::CurrentTexture );
-        smoothShader.setUniform( "imageType", imageType );
-        smoothShader.setUniform( "smoothing", 1.0f / smoothing );
-
-        fboAlphaTested.create( static_cast<unsigned int>( resizedSpriteSize.x ), static_cast<unsigned int>( resizedSpriteSize.y ) );
-        fboAlphaTested.clear( sf::Color::Transparent );
-        fboAlphaTested.draw( spriteResize, smoothRenderStates );
-        fboAlphaTested.display();
-
-
-        /********************************************************/
         /***                   Show Results                   ***/
         /********************************************************/
 
+        // Source
+
+        sf::Sprite& sourceSprite = sdf.GetSourceSprite();
         sourceSprite.setScale( zoomOriginal / 100.0f, zoomOriginal / 100.0f );
 
         ImGui::Begin( "Original Picture" );
@@ -216,18 +159,27 @@ int main()
         ImGui::EndChild();
         ImGui::End();
 
+        sourceSprite.setScale( 1.0f, 1.0f );
 
-        sf::Sprite processedSprite( fboAlphaTested.getTexture() );
-        processedSprite.setScale( zoomProcessed / 100.0f, zoomProcessed / 100.0f );
+        // Processed
+
+        std::reference_wrapper<sf::Sprite> processedSprite = std::ref( sdf.GetAlphaSprite() );
+        if( viewMode == ViewMode::NoResize )
+            processedSprite = std::ref( sdf.GetSDFSprite() );
+
+        else if( viewMode == ViewMode::Resized )
+            processedSprite = std::ref( sdf.GetResizeSprite() );
+
+        processedSprite.get().setScale( zoomProcessed / 100.0f, zoomProcessed / 100.0f );
         
         ImGui::Begin( "Processed Picture" );
         ImGui::SliderInt( "Zoom", &zoomProcessed, 10, 1000, "%d%%" );
         ImGui::BeginChild( "ProcessedImage", ImVec2( 0, 0 ), false, ImGuiWindowFlags_HorizontalScrollbar );
-        ImGui::Image( processedSprite );
+        ImGui::Image( processedSprite.get() );
         ImGui::EndChild();
         ImGui::End();
 
-
+         processedSprite.get().setScale( 1.0f, 1.0f );
 
 
 
