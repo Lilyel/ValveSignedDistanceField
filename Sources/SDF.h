@@ -47,6 +47,7 @@ private:
     sf::Shader m_sdfShader;
     sf::RenderStates m_sdfRenderStates;
     sf::Sprite m_sdfSprite;
+    sf::Texture m_sdfTexture;
 
     // Resize of the signed distance field result.
     sf::RenderTexture m_resizeFBO;

@@ -8,7 +8,7 @@
 #include <string>
 #include <functional>
 
-#define HIGH_DPI
+//#define HIGH_DPI
 
 #ifdef HIGH_DPI
 static constexpr unsigned int WINDOW_SIZE_X = 2800;
@@ -175,7 +175,7 @@ int main()
         // Processed
 
         ImGui::Begin("Processed Picture");
-        ImGui::SliderInt("Zoom", &zoomProcessed, 10, 2000, "%d%%");
+        ImGui::SliderInt("Zoom", &zoomProcessed, 10, 4000, "%d%%");
         ImGui::SameLine();
         ImGui::ColorEdit4("Background", &backgroundProcessedColor.x, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreview);
 

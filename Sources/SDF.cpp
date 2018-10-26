@@ -81,7 +81,10 @@ void SDF::ProcessDistanceField()
     m_sdfFBO.draw( m_sourceSprite, m_sdfRenderStates );
     m_sdfFBO.display();
 
-    m_sdfSprite.setTexture( m_sdfFBO.getTexture(), true );
+    m_sdfTexture = m_sdfFBO.getTexture();
+    // Important : Set smooth to true to use bi-linear filter.
+    m_sdfTexture.setSmooth( true );
+    m_sdfSprite.setTexture( m_sdfTexture, true );   
 }
 
 void SDF::ProcessResize()
@@ -105,6 +108,7 @@ void SDF::ProcessResize()
     m_resizeFBO.display();
 
     m_resizeTexture = m_resizeFBO.getTexture();
+    // Set smooth to true to use bi-linear filter.
     m_resizeTexture.setSmooth( true );
     m_resizeSprite.setTexture( m_resizeTexture, true );    
 
