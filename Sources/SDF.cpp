@@ -16,7 +16,6 @@ void SDF::Init( const std::string& dataPath )
 {
     m_sdfShader.loadFromFile( dataPath + "Default.vert", dataPath + "SDF.frag" );
     m_sdfRenderStates.shader = &m_sdfShader;
-
     //m_resizeShader.loadFromFile( dataPath + "Default.vert", dataPath + "Resize.frag" );
     //m_resizeRenderStates.shader = &m_resizeShader;
 
