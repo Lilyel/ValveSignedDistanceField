@@ -1,3 +1,5 @@
 .vs/
 build/
 .vscode/
+
+Data/Saved/*.png

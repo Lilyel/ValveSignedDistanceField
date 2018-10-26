@@ -14,20 +14,30 @@ SDF::SDF() :
 
 void SDF::Init( const std::string& dataPath )
 {
+    // Note for grey + alpha and RGBA image : 
+    // That is very important to remove the blend mode (set to sf::BlendNone).
+    // By default SFML set the blend mode to sf::BlendAlpha
+    // but it will apply alpha on rgb channels too and we don't want that,
+    // because that implies gradient on color and not only on alpha channel.
+
+
     m_sdfShader.loadFromFile( dataPath + "Default.vert", dataPath + "SDF.frag" );
     m_sdfRenderStates.shader = &m_sdfShader;
-    //m_resizeShader.loadFromFile( dataPath + "Default.vert", dataPath + "Resize.frag" );
-    //m_resizeRenderStates.shader = &m_resizeShader;
+    m_sdfRenderStates.blendMode = sf::BlendNone;
+
+    // We have a resize shader to ensure that the color channel won't be modify by the alpha on grey + alpha and RGBA images.
+    m_resizeShader.loadFromFile( dataPath + "Default.vert", dataPath + "Resize.frag" );
+    m_resizeRenderStates.shader = &m_resizeShader;
+    m_resizeRenderStates.blendMode = sf::BlendNone;
 
     m_alphaTestedShader.loadFromFile( dataPath + "Default.vert", dataPath + "Smooth.frag" );
     m_alphaTestedStates.shader = &m_alphaTestedShader;
+    m_alphaTestedStates.blendMode = sf::BlendNone;
 }
 
 void SDF::SetTexture( const std::string& fileName )
 {
     m_sourceTexture.loadFromFile( fileName );
-    m_sourceTexture.setSmooth( false );
-    //m_sourceTexture.generateMipmap();
     m_sourceSize = m_sourceTexture.getSize();
     m_sourceSprite.setTexture( m_sourceTexture, true );
 
@@ -71,16 +81,12 @@ void SDF::ProcessDistanceField()
     m_sdfFBO.draw( m_sourceSprite, m_sdfRenderStates );
     m_sdfFBO.display();
 
-    //if( !m_sdfFBO.generateMipmap() )
-    //    std::cerr << "Failed to generate SDF mipmap." << std::endl;
-
     m_sdfSprite.setTexture( m_sdfFBO.getTexture(), true );
 }
 
 void SDF::ProcessResize()
 {
-    //m_resizeShader.setUniform( "sourceTexture", sf::Shader::CurrentTexture );
-    //m_resizeShader.setUniform( "mipmapLevel", resizeFactor );
+    m_resizeShader.setUniform( "sourceTexture", sf::Shader::CurrentTexture );
 
 
     sf::Vector2u newSize( m_sourceSize.x / static_cast<unsigned int>( resizeFactor ), 
@@ -95,15 +101,12 @@ void SDF::ProcessResize()
     m_resizeFBO.clear( sf::Color::Transparent );
     // The source picture will pass through the fragment shader
     // and the result will be stored in the FBO texture.
-    m_resizeFBO.draw( m_sdfSprite );
+    m_resizeFBO.draw( m_sdfSprite, m_resizeRenderStates );
     m_resizeFBO.display();
 
     m_resizeTexture = m_resizeFBO.getTexture();
     m_resizeTexture.setSmooth( true );
-    m_resizeSprite.setTexture( m_resizeTexture, true );
-    //m_resizeSprite.setTexture( m_resizeFBO.getTexture(), true );
-
-    
+    m_resizeSprite.setTexture( m_resizeTexture, true );    
 
     m_sdfSprite.setScale( 1.0f, 1.0f );
 }

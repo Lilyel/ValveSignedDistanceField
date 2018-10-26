@@ -50,8 +50,8 @@ private:
 
     // Resize of the signed distance field result.
     sf::RenderTexture m_resizeFBO;
-    //sf::Shader m_resizeShader;
-    //sf::RenderStates m_resizeRenderStates;
+    sf::Shader m_resizeShader;
+    sf::RenderStates m_resizeRenderStates;
     sf::Sprite m_resizeSprite;
     sf::Texture m_resizeTexture;
 

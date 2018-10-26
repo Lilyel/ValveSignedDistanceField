@@ -55,10 +55,13 @@ void SetFragColor( vec4 _pixel, float _pixelDistance )
 
 }
 
-void GetMinMaxArea( out ivec2 _minArea, out ivec2 _maxArea, out ivec2 _texCoordInPix, vec2 _texCoord, ivec2 _size )
-{	
-	_texCoordInPix = ivec2( floor( _texCoord.x * float( _size.x ) ), floor( _texCoord.y * float( _size.y ) ) );
+ivec2 GetTexCoordInPix( vec2 _texCoord, ivec2 _size )
+{
+	return ivec2( floor( _texCoord.x * float( _size.x ) ), floor( _texCoord.y * float( _size.y ) ) );
+}
 
+void GetMinMaxArea( out ivec2 _minArea, out ivec2 _maxArea, ivec2 _texCoordInPix, ivec2 _size )
+{
 	_minArea = ivec2( _texCoordInPix.x - spread, _texCoordInPix.y - spread );
 	_maxArea = ivec2( _texCoordInPix.x + spread, _texCoordInPix.y + spread );
 
@@ -77,8 +80,8 @@ vec2 GetUVNormalized( int _i, int _j, ivec2 _size )
 
 float GetLength( vec2 _vector )
 {
-	//return abs( vector.x ) + abs( vector.y );
-	//return ( vector.x * vector.x + vector.y * vector.y )
+	//return abs( _vector.x ) + abs( _vector.y );
+	//return ( _vector.x * _vector.x + _vector.y * _vector.y );
 	return length( _vector );
 }
 
@@ -92,14 +95,14 @@ float GetPixelDistance( int _i, int _j, ivec2 _texCoordInPix )
 // Process the distance between the pixel and the nearest pixel outside the shape.
 float GetDistanceToNearestOut( vec2 _texCoord, float _maxDistance )
 {
-	ivec2 texCoordInPix;
+	ivec2 texCoordInPix = GetTexCoordInPix( _texCoord, size );
 
 	// Search area around the pixel.
 	// The distance can't exceed the spread parameter
 	// so we search in the square of size spread * 2 around the pixel.
 	ivec2 minArea;
 	ivec2 maxArea;
-	GetMinMaxArea( minArea, maxArea, texCoordInPix, _texCoord, size );
+	GetMinMaxArea( minArea, maxArea, texCoordInPix, size );
 
 	float shortestDistance = _maxDistance;
 	float channelToTest = 0.0;
@@ -116,33 +119,34 @@ float GetDistanceToNearestOut( vec2 _texCoord, float _maxDistance )
 			if( currentDistance < shortestDistance )
 			{
 				vec2 uvToTest = GetUVNormalized( i, j, size );
-				channelToTest = GetPixelToProcess( texture2D( sourceTexture, uvToTest ) );
+				vec4 pixelToTest = texture2D( sourceTexture, uvToTest );
+				channelToTest = GetPixelToProcess( pixelToTest );
 
 				// By logic, we should test < IN_THRESHOLD, but it doesn't seems to work well...
-				if( channelToTest < IN_THRESHOLD )
+				if( channelToTest < ERROR_OK )
 					shortestDistance = currentDistance;
 			}
 		}
 	}
 	// In this case, if we didn't find the nearest pixel, that fine, 
-	// we just put a big value as distance (spread * spread).
+	// we just put a big value as distance (max).
 	// That will "simulate" a pixel very far away.
 	return shortestDistance;
 }
 
 // Process the distance between the pixel and the nearest pixel inside the shape.
-bool GetDistanceToNearestIn( out vec4 _nearestColor, out float _toNearestDistance, vec2 _texCoord, float _maxDistance )
+float GetDistanceToNearestIn( out vec4 _nearestColor, vec2 _texCoord, float _maxDistance )
 {
-	ivec2 texCoordInPix;
+	ivec2 texCoordInPix = GetTexCoordInPix( _texCoord, size );
 
 	// Search area around the pixel.
 	// The distance can't exceed the spread parameter
 	// so we search in the square of size spread * 2 around the pixel.
 	ivec2 minArea;
 	ivec2 maxArea;
-	GetMinMaxArea( minArea, maxArea, texCoordInPix, _texCoord, size );
+	GetMinMaxArea( minArea, maxArea, texCoordInPix, size );
 
-	_toNearestDistance = _maxDistance;
+	float shortestDistance = _maxDistance;
 	float channelToTest = 0.0;
 	bool foundNearest = false;
 
@@ -154,7 +158,7 @@ bool GetDistanceToNearestIn( out vec4 _nearestColor, out float _toNearestDistanc
 			float currentDistance = GetPixelDistance( i, j, texCoordInPix );
 
 			// If the distance is better, check if that the pixel is inside the shape.
-			if( currentDistance < _toNearestDistance )
+			if( currentDistance < shortestDistance )
 			{
 				vec2 uvToTest = GetUVNormalized( i, j, size );
 				vec4 pixelToTest = texture2D( sourceTexture, uvToTest );
@@ -162,7 +166,7 @@ bool GetDistanceToNearestIn( out vec4 _nearestColor, out float _toNearestDistanc
 
 				if( channelToTest >= IN_THRESHOLD )
 				{				
-					_toNearestDistance = currentDistance;
+					shortestDistance = currentDistance;
 					// Save also the color to preserve image color and not generating white edges.
 					_nearestColor = pixelToTest;
 					foundNearest = true;
@@ -170,8 +174,8 @@ bool GetDistanceToNearestIn( out vec4 _nearestColor, out float _toNearestDistanc
 			}
 		}
 	}
-	// Signal that we didn't find an in pixel in the area.
-	return foundNearest;
+
+	return shortestDistance;
 }
 
 void main()
@@ -179,21 +183,7 @@ void main()
 	vec2 texCoord = gl_TexCoord[0].xy;
     vec4 pixel = texture2D( sourceTexture, texCoord );
 
-	
-
-	// T,L ----- spread ----- T,R
-	//  |                      |
-	//  |                      |
-	// spread		x	     spread
-	//  |                      |
-	//  |                      |
-	// B,L ----- spread ----- B,R
-
-
-	// Bottom right corner of the area.
-	vec2 BR = vec2( float( spread ), float( spread ) );
-	float maxDistance = GetLength( BR );
-	// Top left corner of the area.
+	float maxDistance = float( spread );
 	float minDistance = -maxDistance;
 
 
@@ -201,8 +191,10 @@ void main()
 	float toNearestDistance = maxDistance;
 	vec4 finalColor = pixel;
 
+	bool isIn = pixelChannelToProcess >= IN_THRESHOLD;
+
 	// If the pixel value in bigger than the threshold, we consider the pixel inside the shape.
-	if( pixelChannelToProcess >= IN_THRESHOLD )
+	if( isIn )
 	{
 		toNearestDistance = GetDistanceToNearestOut( texCoord, maxDistance );
 		// Transform the distance to an euclydean distance
@@ -218,7 +210,7 @@ void main()
 	// Otherwise the pixel is considered outside the shape.
 	else
 	{
-		bool nearestFound = GetDistanceToNearestIn( finalColor, toNearestDistance, texCoord, maxDistance );
+		toNearestDistance = GetDistanceToNearestIn( finalColor, texCoord, maxDistance );
 		// Transform the distance to an euclydean distance
 		// and bring it in the [0, 1] interval, where 0.5 is the edge of the shape.
 		// (and reverse it, we need the pixel value to decrease if it is far away from the shape.
@@ -234,9 +226,9 @@ void main()
 
 
 	
-
 	toNearestDistance = clamp( toNearestDistance, minDistance, maxDistance );
 	toNearestDistance = ( toNearestDistance - minDistance ) / ( maxDistance - minDistance );
-
+	
 	SetFragColor( finalColor, toNearestDistance );
+	//gl_FragColor = vec4( toNearestDistance , toNearestDistance, toNearestDistance, 1.0 );
 }

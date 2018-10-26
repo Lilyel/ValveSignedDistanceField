@@ -8,7 +8,7 @@
 #include <string>
 #include <functional>
 
-//#define HIGH_DPI
+#define HIGH_DPI
 
 #ifdef HIGH_DPI
 static constexpr unsigned int WINDOW_SIZE_X = 2800;

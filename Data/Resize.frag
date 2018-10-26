@@ -1,9 +1,9 @@
-#version 130
+#version 120
 
 uniform sampler2D sourceTexture;
-uniform int mipmapLevel;
+//uniform int mipmapLevel;
 
 void main()
 {
-    gl_FragColor = textureLod( sourceTexture, gl_TexCoord[0].xy, mipmapLevel );
+    gl_FragColor = texture2D( sourceTexture, gl_TexCoord[0].xy );
 }
