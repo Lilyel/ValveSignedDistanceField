@@ -22,6 +22,7 @@ public:
     void SetTexture( const std::string& fileName );
 
     void Process();
+    void ProcessAlphaTest( float finalScale, const sf::Color& clearColor = sf::Color::Transparent );
 
     sf::Sprite& GetSourceSprite();
 
@@ -32,7 +33,6 @@ public:
 private:
     void ProcessDistanceField();
     void ProcessResize();
-    void ProcessAlphaTest();
 
     void ResetFBOsToSourceTexture();
 
@@ -50,9 +50,10 @@ private:
 
     // Resize of the signed distance field result.
     sf::RenderTexture m_resizeFBO;
-    sf::Shader m_resizeShader;
-    sf::RenderStates m_resizeRenderStates;
+    //sf::Shader m_resizeShader;
+    //sf::RenderStates m_resizeRenderStates;
     sf::Sprite m_resizeSprite;
+    sf::Texture m_resizeTexture;
 
     // Render final result with alpha testing.
     sf::RenderTexture m_alphaTestedFBO;
@@ -61,7 +62,7 @@ private:
     sf::Sprite m_alphaTestedSprite;
 
 public:
-    float spread;
+    int spread;
     float smoothing;
     int resizeFactor;
     int imageType;

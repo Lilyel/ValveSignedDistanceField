@@ -7,29 +7,32 @@ uniform float smoothing;
 
 void main()
 {
-	vec4 pixel = texture2D( sourceTexture, gl_TexCoord[0].xy );
+	gl_FragColor = texture2D( sourceTexture, gl_TexCoord[0].xy );
 		
 	if( imageType == 0 )
 	{
-		float greyColor = 0.2126 * pixel.r + 0.7152 * pixel.g + 0.0722 * pixel.b;
+		float greyColor = 0.2126 * gl_FragColor.r + 0.7152 * gl_FragColor.g + 0.0722 * gl_FragColor.b;
 		float greySmooth = smoothstep( 0.5 - smoothing, 0.5 + smoothing, greyColor );
 
-		gl_FragColor = vec4( greySmooth, greySmooth, greySmooth, pixel.a );
+		gl_FragColor.r = greySmooth;
+		gl_FragColor.g = greySmooth;
+		gl_FragColor.b = greySmooth;
 	}
 
 	else if( imageType == 1 || imageType == 3 )
 	{
-		float alphaSmooth = smoothstep( 0.5 - smoothing, 0.5 + smoothing, pixel.a );
-		gl_FragColor = vec4( pixel.xyz, alphaSmooth );
+		float alphaSmooth = smoothstep( 0.5 - smoothing, 0.5 + smoothing, gl_FragColor.a );
+		gl_FragColor.a = alphaSmooth;
 	}
+
 	else if( imageType == 2 )
 	{
-		float redSmooth = smoothstep( 0.5 - smoothing, 0.5 + smoothing, pixel.r );
-		float greenSmooth = smoothstep( 0.5 - smoothing, 0.5 + smoothing, pixel.g );
-		float blueSmooth = smoothstep( 0.5 - smoothing, 0.5 + smoothing, pixel.b );
+		float redSmooth = smoothstep( 0.5 - smoothing, 0.5 + smoothing, gl_FragColor.r );
+		float greenSmooth = smoothstep( 0.5 - smoothing, 0.5 + smoothing, gl_FragColor.g );
+		float blueSmooth = smoothstep( 0.5 - smoothing, 0.5 + smoothing, gl_FragColor.b );
 
-		gl_FragColor = vec4( redSmooth, greenSmooth, blueSmooth, pixel.a );
+		gl_FragColor.r = redSmooth;
+		gl_FragColor.g = greenSmooth;
+		gl_FragColor.b = blueSmooth;
 	}
-	else
-		gl_FragColor = pixel;
 }
