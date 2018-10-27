@@ -61,6 +61,7 @@ private:
     sf::Shader m_alphaTestedShader;
     sf::RenderStates m_alphaTestedStates;
     sf::Sprite m_alphaTestedSprite;
+    sf::Texture m_alphaTestedTexture;
 
 public:
     int spread;

@@ -9,8 +9,8 @@ SDF::SDF() :
     resizeFactor( 3 ),
     imageType( ImageType::RGBA )
 {
-    m_sourceTexture.setSmooth( true );
 }
+
 
 void SDF::Init( const std::string& dataPath )
 {
@@ -38,7 +38,10 @@ void SDF::Init( const std::string& dataPath )
 void SDF::SetTexture( const std::string& fileName )
 {
     m_sourceTexture.loadFromFile( fileName );
+    m_sourceTexture.setSmooth( true );
+
     m_sourceSize = m_sourceTexture.getSize();
+    
     m_sourceSprite.setTexture( m_sourceTexture, true );
 
     ResetFBOsToSourceTexture();
@@ -70,47 +73,50 @@ void SDF::Process()
 
 void SDF::ProcessDistanceField()
 {
+    // The source picture will pass through the fragment shader
+    // and the result will be stored in the FBO texture.
+    // Important : Set smooth to true to use bi-linear filter when resizing (on sdf texture).
+
     m_sdfShader.setUniform( "sourceTexture", sf::Shader::CurrentTexture );
     m_sdfShader.setUniform( "imageType", imageType );
     m_sdfShader.setUniform( "spread", spread );
     m_sdfShader.setUniform( "size", ( sf::Vector2i )m_sourceSize );
 
     m_sdfFBO.clear( sf::Color::Transparent );
-    // The source picture will pass through the fragment shader
-    // and the result will be stored in the FBO texture.
     m_sdfFBO.draw( m_sourceSprite, m_sdfRenderStates );
     m_sdfFBO.display();
 
-    m_sdfTexture = m_sdfFBO.getTexture();
-    // Important : Set smooth to true to use bi-linear filter.
+    m_sdfTexture = m_sdfFBO.getTexture(); // Copy texture to allow us to set linear filtering.
     m_sdfTexture.setSmooth( true );
     m_sdfSprite.setTexture( m_sdfTexture, true );   
+}
+
+void GetScaledSpriteSize( sf::Vector2u& outSize, const sf::Sprite& scaledSprite )
+{
+    const sf::FloatRect& spriteRect = scaledSprite.getGlobalBounds();
+
+    outSize.x = static_cast<unsigned int>( std::max( spriteRect.width, 1.0f ) );
+    outSize.y = static_cast<unsigned int>( std::max( spriteRect.height, 1.0f ) );
 }
 
 void SDF::ProcessResize()
 {
     m_resizeShader.setUniform( "sourceTexture", sf::Shader::CurrentTexture );
 
-
-    sf::Vector2u newSize( m_sourceSize.x / static_cast<unsigned int>( resizeFactor ), 
-                          m_sourceSize.y / static_cast<unsigned int>( resizeFactor ) );
-    newSize.x = std::max( newSize.x, 1u );
-    newSize.y = std::max( newSize.y, 1u );
-
     const float scale = 1.0f / static_cast<float>( resizeFactor );
     m_sdfSprite.setScale( scale, scale );
 
+    sf::Vector2u newSize;
+    GetScaledSpriteSize( newSize, m_sdfSprite );
+
     m_resizeFBO.create( newSize.x, newSize.y );
     m_resizeFBO.clear( sf::Color::Transparent );
-    // The source picture will pass through the fragment shader
-    // and the result will be stored in the FBO texture.
     m_resizeFBO.draw( m_sdfSprite, m_resizeRenderStates );
     m_resizeFBO.display();
 
     m_resizeTexture = m_resizeFBO.getTexture();
-    // Set smooth to true to use bi-linear filter.
     m_resizeTexture.setSmooth( true );
-    m_resizeSprite.setTexture( m_resizeTexture, true );    
+    m_resizeSprite.setTexture( m_resizeTexture, true );   
 
     m_sdfSprite.setScale( 1.0f, 1.0f );
 }
@@ -119,26 +125,21 @@ void SDF::ProcessAlphaTest( float finalScale, const sf::Color& clearColor )
 {
     m_alphaTestedShader.setUniform( "sourceTexture", sf::Shader::CurrentTexture );
     m_alphaTestedShader.setUniform( "imageType", imageType );
-    m_alphaTestedShader.setUniform( "smoothing", 1.0f / smoothing );
+    m_alphaTestedShader.setUniform( "smoothing", 1.0f / smoothing );    
 
-    // Find the final size of the scaled sprite.
-    const sf::FloatRect& resizedSpriteRect = m_resizeSprite.getLocalBounds();
-    sf::Vector2u newSize( static_cast<unsigned int>( resizedSpriteRect.width * finalScale ),
-                          static_cast<unsigned int>( resizedSpriteRect.width * finalScale ) );
-    newSize.x = std::max( newSize.x, 1u );
-    newSize.y = std::max( newSize.y, 1u );
-
-    // Apply scale to sprite.
     m_resizeSprite.setScale( finalScale, finalScale );
+
+    sf::Vector2u newSize;
+    GetScaledSpriteSize( newSize, m_resizeSprite );
 
     m_alphaTestedFBO.create( newSize.x, newSize.y );
     m_alphaTestedFBO.clear( clearColor );
-    // The source picture will pass through the fragment shader
-    // and the result will be stored in the FBO texture.
     m_alphaTestedFBO.draw( m_resizeSprite, m_alphaTestedStates );
     m_alphaTestedFBO.display();
 
-    m_alphaTestedSprite.setTexture( m_alphaTestedFBO.getTexture(), true );
+    m_alphaTestedTexture = m_alphaTestedFBO.getTexture();
+    m_alphaTestedTexture.setSmooth( true );
+    m_alphaTestedSprite.setTexture( m_alphaTestedTexture, true );
 
     m_resizeSprite.setScale( 1.0f, 1.0f );
 }

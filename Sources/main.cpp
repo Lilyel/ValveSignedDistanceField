@@ -1,5 +1,7 @@
 #include "SDF.h"
 
+#include "UI.h"
+
 #include "imgui.h"
 #include "imgui-SFML.h"
 
@@ -8,8 +10,14 @@
 #include <string>
 #include <functional>
 
-//#define HIGH_DPI
 
+#ifdef _MSC_VER
+static const std::string DATA_PATH = "../../Data/";
+#else
+static const std::string DATA_PATH = "../Data/";
+#endif
+
+#define HIGH_DPI
 #ifdef HIGH_DPI
 static constexpr unsigned int WINDOW_SIZE_X = 2800;
 static constexpr unsigned int WINDOW_SIZE_Y = 1900;
@@ -20,137 +28,118 @@ static constexpr unsigned int WINDOW_SIZE_Y = 720;
 static constexpr float GLOBAL_SCALE = 1.0f;
 #endif
 
-enum ViewMode
+
+
+void ShowSourceImage( int& _zoom, SDF& _sdf )
 {
-    NoResize,
-    Resized,
-    AlphaTested
-};
+    ImGui::Begin( "Original Picture" );
+
+    const float scale = ui::Zoom( _zoom, 10, 4000 );
+
+    sf::Sprite& sourceSprite = _sdf.GetSourceSprite();
+    sourceSprite.setScale( scale, scale );
+
+    ui::Image( sourceSprite );
+
+    // Restore default scale.
+    sourceSprite.setScale( 1.0f, 1.0f );
+
+    ImGui::End();
+}
+
+void ShowProcessedImage( int& _zoom, bool& _apply, int _viewMode, SDF& _sdf )
+{
+    ImGui::Begin( "Processed Picture" );
+
+    const float scale = ui::Zoom( _zoom, 10, 4000 );
+
+    // Process the signed distance field, resize it then render the final result.
+    if( _apply )
+    {
+        _sdf.Process();
+        _apply = false;
+    }
+
+    // Process the final render with the last processed signed distance field resized.
+    // The scale will be applied while rendering to apply smooth.
+    _sdf.ProcessAlphaTest( scale );
+
+    // Retrieve the sprite that the user want to see.
+    // If it is not the alpha tested result, we have to apply the scale.
+    std::reference_wrapper<sf::Sprite> processedSprite = std::ref( _sdf.GetAlphaSprite() );
+    if( _viewMode == ui::ViewMode::NoResize )
+    {
+        processedSprite = std::ref( _sdf.GetSDFSprite() );
+        processedSprite.get().setScale( scale, scale );
+    }
+
+    else if( _viewMode == ui::ViewMode::Resized )
+    {
+        processedSprite = std::ref( _sdf.GetResizeSprite() );
+        processedSprite.get().setScale( scale, scale );
+    }
+
+    ui::Image( processedSprite.get() );
+
+    // Resture default scale.
+    processedSprite.get().setScale( 1.0f, 1.0f );
+
+    ImGui::End();
+}
+
 
 int main()
 {
-    std::string DATA_PATH;
+    sf::RenderWindow window( sf::VideoMode( WINDOW_SIZE_X, WINDOW_SIZE_Y ),
+                             "Improved Alpha-Tested Magnfication for Vector Textures and Special Effects" );
+    window.setFramerateLimit( 60 );
 
-#ifdef _MSC_VER
-    DATA_PATH = "../../Data/";
-#else
-    DATA_PATH = "../Data/";
-#endif
-
-    const char paperRef[] = "Chris Green. 2007. Improved alpha-tested magnification for vector textures and special effects."
-                            " In ACM SIGGRAPH 2007 courses (SIGGRAPH '07). ACM, New York, NY, USA, 9-18."
-                            " DOI: https://doi.org/10.1145/1281500.1281665";
-    const char paperRefShort[] = "Chris Green Improved alpha-tested magnification for vector textures and special effects";
-
-    sf::RenderWindow window(sf::VideoMode(WINDOW_SIZE_X, WINDOW_SIZE_Y), "Improved Alpha-Tested Magnfication for Vector Textures and Special Effects");
-    window.setFramerateLimit(60);
-
-    ImGui::SFML::Init(window);
+    ImGui::SFML::Init( window );
 
     ImGui::GetIO().FontGlobalScale = GLOBAL_SCALE;
-    ImGui::GetStyle().ScaleAllSizes(GLOBAL_SCALE);
+    ImGui::GetStyle().ScaleAllSizes( GLOBAL_SCALE );
 
     sf::Clock deltaClock;
 
     SDF sdf;
-    sdf.Init(DATA_PATH);
-    sdf.SetTexture(DATA_PATH + "Circle1024.png");
+    sdf.Init( DATA_PATH );
+    sdf.SetTexture( DATA_PATH + "Circle1024.png" );
 
     char fileNameToLoad[100] = "\0";
     char fileNameToSave[100] = "\0";
 
-    int viewMode = ViewMode::AlphaTested;
+    int viewMode = ui::ViewMode::AlphaTested;
     int zoomOriginal = 100;
     int zoomProcessed = 100;
     bool autoApply = false;
-    bool firstLoop = true;
-    bool apply = false;
-    ImVec4 backgroundProcessedColor(0.0f, 0.0f, 0.0f, 0.0f);
+    bool apply = true; // True to process when oppening the app.
 
-    sf::RenderTexture processedFBO;
 
-    while (window.isOpen())
+    while( window.isOpen() )
     {
         sf::Event event;
-        while (window.pollEvent(event))
+        while( window.pollEvent( event ) )
         {
-            ImGui::SFML::ProcessEvent(event);
+            ImGui::SFML::ProcessEvent( event );
 
-            if (event.type == sf::Event::Closed)
+            if( event.type == sf::Event::Closed )
                 window.close();
         }
 
-        ImGui::SFML::Update(window, deltaClock.restart());
+        ImGui::SFML::Update( window, deltaClock.restart() );
 
         /********************************************************/
         /***             Retrieve user settings               ***/
         /********************************************************/
-        ImGui::Begin("Settings");
 
-        ImGui::Text("File name : ");
-        ImGui::SameLine();
-        ImGui::InputText("", fileNameToLoad, 99);
-        ImGui::SameLine();
-        if (ImGui::Button("Load"))
-            sdf.SetTexture(fileNameToLoad);
+        ImGui::Begin( "Settings" );
 
-        ImGui::Separator();
-
-        ImGui::Text("Image Type");
-        ImGui::RadioButton("Grey (grey channel will be used)", &sdf.imageType, ImageType::Grey);
-        ImGui::RadioButton("Grey + Alpha (Alpha channel will be used)", &sdf.imageType, ImageType::Grey_Alpha);
-        ImGui::RadioButton("RGB (Average of the R, G and B channel wil be used)", &sdf.imageType, ImageType::AverageRGB);
-        ImGui::RadioButton("RGBA (Alpha channel will be used)", &sdf.imageType, ImageType::RGBA);
-
-        ImGui::Separator();
-
-        ImGui::SliderInt("Spread", &sdf.spread, 1, 50);
-        ImGui::SliderFloat("Smoothing", &sdf.smoothing, 2.0f, 128.0f);
-        ImGui::SliderInt("Resize Factor", &sdf.resizeFactor, 1, 30);
-
-        ImGui::Separator();
-
-        ImGui::Text("View Mode");
-        ImGui::RadioButton("Distance field without resize.", &viewMode, ViewMode::NoResize);
-        ImGui::RadioButton("Distance field with resize.", &viewMode, ViewMode::Resized);
-        ImGui::RadioButton("Distance field alpha tested.", &viewMode, ViewMode::AlphaTested);
-
-        ImGui::Separator();
-
-        if (ImGui::Button("Paper Reference"))
-            ImGui::OpenPopup("Reference");
-
-        if (ImGui::BeginPopupModal("Reference"))
-        {
-            ImGui::BeginChild("", ImVec2(600, 300));
-            ImGui::TextWrapped(paperRef);
-
-            if (ImGui::Button("Copy"))
-                ImGui::SetClipboardText(paperRef);
-
-            ImGui::SameLine();
-
-            if (ImGui::Button("Copy author and title"))
-                ImGui::SetClipboardText(paperRefShort);
-
-            ImGui::SameLine();
-
-            if (ImGui::Button("Close"))
-                ImGui::CloseCurrentPopup();
-
-            ImGui::EndChild();
-            ImGui::EndPopup();
-        }
-
-        ImGui::Separator();
-
-        ImGui::Checkbox("Auto Apply", &autoApply);
-        ImGui::SameLine();
-        if (ImGui::Button("Apply") || autoApply || firstLoop)
-        {
-            apply = true;
-            firstLoop = false;
-        }
+        ui::LoadImage( fileNameToLoad, sdf ); ImGui::Separator();
+        ui::ImageType( sdf.imageType ); ImGui::Separator();
+        ui::SpreadSmoothResize( sdf.spread, sdf.smoothing, sdf.resizeFactor ); ImGui::Separator();
+        ui::ViewMode( viewMode ); ImGui::Separator();
+        ui::PaperRef(); ImGui::Separator();
+        ui::Apply( apply, autoApply );
 
         ImGui::End();
 
@@ -158,87 +147,19 @@ int main()
         /***                   Show Results                   ***/
         /********************************************************/
 
-        // Source
+        ShowSourceImage( zoomOriginal, sdf );
 
-        sf::Sprite &sourceSprite = sdf.GetSourceSprite();
-        sourceSprite.setScale(zoomOriginal / 100.0f, zoomOriginal / 100.0f);
+        ShowProcessedImage( zoomProcessed, apply, viewMode, sdf );
 
-        ImGui::Begin("Original Picture");
-        ImGui::SliderInt("Zoom", &zoomOriginal, 10, 2000, "%d%%");
-        ImGui::BeginChild("SourceImage", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-        ImGui::Image(sourceSprite);
-        ImGui::EndChild();
-        ImGui::End();
+        /********************************************************/
+        /***          Save to PNG functionnality              ***/
+        /********************************************************/
 
-        sourceSprite.setScale(1.0f, 1.0f);
+        ui::SaveImage( DATA_PATH, fileNameToSave, sdf );
 
-        // Processed
-
-        ImGui::Begin("Processed Picture");
-        ImGui::SliderInt("Zoom", &zoomProcessed, 10, 4000, "%d%%");
-        ImGui::SameLine();
-        ImGui::ColorEdit4("Background", &backgroundProcessedColor.x, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreview);
-
-        // Process the signed distance field, resize it then render the final result.
-        if (apply)
-        {
-            sdf.Process();
-            apply = false;
-        }
-
-        const float scaleProcessed = static_cast<float>(zoomProcessed) / 100.0f;
-        const sf::Color backgroundColor(
-            (sf::Uint8)(backgroundProcessedColor.x * 255.0f),
-            (sf::Uint8)(backgroundProcessedColor.y * 255.0f),
-            (sf::Uint8)(backgroundProcessedColor.z * 255.0f),
-            (sf::Uint8)(backgroundProcessedColor.w * 255.0f));
-
-        // Process the final render with the last processed signed distance field resized.
-        sdf.ProcessAlphaTest(scaleProcessed, sf::Color(backgroundProcessedColor));
-
-        // Retrieve the sprite that the user want.
-        // If it is not the final result, we have to apply the scale.
-        std::reference_wrapper<sf::Sprite> processedSprite = std::ref(sdf.GetAlphaSprite());
-        if (viewMode == ViewMode::NoResize)
-        {
-            processedSprite = std::ref(sdf.GetSDFSprite());
-            processedSprite.get().setScale(scaleProcessed, scaleProcessed);
-        }
-
-        else if (viewMode == ViewMode::Resized)
-        {
-            processedSprite = std::ref(sdf.GetResizeSprite());
-            processedSprite.get().setScale(scaleProcessed, scaleProcessed);
-        }
-
-        ImGui::BeginChild("ProcessedImage", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-        ImGui::Image(processedSprite.get());
-        ImGui::EndChild();
-        ImGui::End();
-
-        processedSprite.get().setScale(1.0f, 1.0f);
-
-        ImGui::Begin("Save to file");
-
-        ImGui::Text("File prefix : ");
-        ImGui::SameLine();
-        ImGui::InputText("", fileNameToSave, 99);
-        if (ImGui::Button("Save"))
-        {
-            sf::Image imageToSave = sdf.GetSDFSprite().getTexture()->copyToImage();
-            imageToSave.saveToFile(DATA_PATH + "Saved/" + fileNameToSave + "_SDF.png");
-
-            imageToSave = sdf.GetResizeSprite().getTexture()->copyToImage();
-            imageToSave.saveToFile(DATA_PATH + "Saved/" + fileNameToSave + "_Resized.png");
-
-            imageToSave = sdf.GetAlphaSprite().getTexture()->copyToImage();
-            imageToSave.saveToFile(DATA_PATH + "Saved/" + fileNameToSave + "_AlphaTested.png");
-        }
-
-        ImGui::End();
 
         window.clear();
-        ImGui::SFML::Render(window);
+        ImGui::SFML::Render( window );
         window.display();
     }
 
