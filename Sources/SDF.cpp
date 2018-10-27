@@ -21,16 +21,16 @@ void SDF::Init( const std::string& dataPath )
     // because that implies gradient on color and not only on alpha channel.
 
 
-    m_sdfShader.loadFromFile( dataPath + "Default.vert", dataPath + "SDF.frag" );
+    m_sdfShader.loadFromFile( dataPath + "Shaders/Default.vert", dataPath + "Shaders/SDF.frag" );
     m_sdfRenderStates.shader = &m_sdfShader;
     m_sdfRenderStates.blendMode = sf::BlendNone;
 
     // We have a resize shader to ensure that the color channel won't be modify by the alpha on grey + alpha and RGBA images.
-    m_resizeShader.loadFromFile( dataPath + "Default.vert", dataPath + "Resize.frag" );
+    m_resizeShader.loadFromFile( dataPath + "Shaders/Default.vert", dataPath + "Shaders/Resize.frag" );
     m_resizeRenderStates.shader = &m_resizeShader;
     m_resizeRenderStates.blendMode = sf::BlendNone;
 
-    m_alphaTestedShader.loadFromFile( dataPath + "Default.vert", dataPath + "Smooth.frag" );
+    m_alphaTestedShader.loadFromFile( dataPath + "Shaders/Default.vert", dataPath + "Shaders/Smooth.frag" );
     m_alphaTestedStates.shader = &m_alphaTestedShader;
     m_alphaTestedStates.blendMode = sf::BlendNone;
 }

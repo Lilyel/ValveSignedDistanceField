@@ -103,7 +103,7 @@ int main()
 
     SDF sdf;
     sdf.Init( DATA_PATH );
-    sdf.SetTexture( DATA_PATH + "Circle1024.png" );
+    sdf.SetTexture( DATA_PATH + "Images/Circle1024.png" );
 
     char fileNameToLoad[100] = "\0";
     char fileNameToSave[100] = "\0";
