@@ -136,10 +136,11 @@ int main()
 
         ui::LoadImage( fileNameToLoad, sdf ); ImGui::Separator();
         ui::ImageType( sdf.imageType ); ImGui::Separator();
-        ui::SpreadSmoothResize( sdf.spread, sdf.smoothing, sdf.resizeFactor ); ImGui::Separator();
+        ui::SpreadResize( sdf.spread, sdf.resizeFactor ); 
+        ui::Apply( apply, autoApply ); ImGui::Separator();
+        ui::SmoothOutlineGlow( sdf ); ImGui::Separator();
         ui::ViewMode( viewMode ); ImGui::Separator();
         ui::PaperRef(); ImGui::Separator();
-        ui::Apply( apply, autoApply );
 
         ImGui::End();
 

@@ -22,7 +22,9 @@ namespace ui
 
     void ImageType( int& _imageType );
 
-    void SpreadSmoothResize( int& _spread, float& _smooth, int& _resize );
+    void SpreadResize( int& _spread, int& _resize );
+
+    void SmoothOutlineGlow( SDF& _sdf );
 
     void ViewMode( int& _viewMode );
 

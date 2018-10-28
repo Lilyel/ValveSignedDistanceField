@@ -5,9 +5,16 @@
 SDF::SDF() :
     m_sourceSprite( m_sourceTexture ),
     spread( 20 ),
-    smoothing( 64.0f ),
     resizeFactor( 3 ),
-    imageType( ImageType::RGBA )
+    imageType( ImageType::RGBA ),
+    smoothing( 64.0f ),
+    outline( false ),
+    outlineColor( sf::Color::Black ),
+    outlineDepth( 0.1f, 0.1f ),
+    glow( false ),
+    glowColor( sf::Color::Black ),
+    glowOffset( 0.0f, 0.0f ),
+    glowStrength( 0.5f )
 {
 }
 
@@ -125,7 +132,14 @@ void SDF::ProcessAlphaTest( float finalScale, const sf::Color& clearColor )
 {
     m_alphaTestedShader.setUniform( "sourceTexture", sf::Shader::CurrentTexture );
     m_alphaTestedShader.setUniform( "imageType", imageType );
-    m_alphaTestedShader.setUniform( "smoothing", 1.0f / smoothing );    
+    m_alphaTestedShader.setUniform( "smoothing", 1.0f / smoothing );  
+    m_alphaTestedShader.setUniform( "outline", outline );
+    m_alphaTestedShader.setUniform( "outlineColor", sf::Glsl::Vec4( outlineColor ) );
+    m_alphaTestedShader.setUniform( "outlineDepth", outlineDepth );
+    m_alphaTestedShader.setUniform( "glow", glow );
+    m_alphaTestedShader.setUniform( "glowColor", sf::Glsl::Vec4( glowColor ) );
+    m_alphaTestedShader.setUniform( "glowOffset", glowOffset );
+    m_alphaTestedShader.setUniform( "glowStrength", glowStrength );
 
     m_resizeSprite.setScale( finalScale, finalScale );
 

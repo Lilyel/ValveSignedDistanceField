@@ -65,7 +65,18 @@ private:
 
 public:
     int spread;
-    float smoothing;
     int resizeFactor;
     int imageType;
+
+
+    float smoothing;
+    bool outline;
+    sf::Color outlineColor;
+    sf::Vector2f outlineDepth; // x : outside, y : inside.
+
+
+    bool glow;
+    sf::Color glowColor;
+    sf::Vector2f glowOffset; // For shadow.
+    float glowStrength;
 };

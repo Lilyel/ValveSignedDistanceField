@@ -8,6 +8,8 @@
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Image.hpp>
 
+#include <limits>
+
 namespace ui
 {
     static constexpr char paperRef[] = "Chris Green. 2007. Improved alpha-tested magnification for vector textures and special effects."
@@ -35,11 +37,43 @@ namespace ui
         ImGui::RadioButton( "RGBA (Alpha channel will be used)", &_imageType, ImageType::RGBA );
     }
 
-    void SpreadSmoothResize( int& _spread, float& _smooth, int& _resize )
+    void SpreadResize( int& _spread, int& _resize )
     {
+        ImGui::Text( "Signed Distance Field" );
         ImGui::SliderInt( "Spread", &_spread, 1, 50 );
-        ImGui::SliderFloat( "Smoothing", &_smooth, 2.0f, 128.0f );
         ImGui::SliderInt( "Resize Factor", &_resize, 1, 30 );
+    }
+
+    void SmoothOutlineGlow( SDF& _sdf )
+    {
+        ImGui::Text( "Alpha testing" );
+
+        ImGui::SliderFloat( "Smoothing", &_sdf.smoothing, 2.0f, 128.0f );
+
+        ImGui::Checkbox( "Outline", &_sdf.outline );
+        sf::Glsl::Vec4 outlineColor( _sdf.outlineColor );
+
+        ImGui::ColorEdit4( "Outline color", &outlineColor.x, ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_Uint8 );
+        ImGui::SliderFloat( "Outline depth ouside", &_sdf.outlineDepth.x, 0.0f, 0.5f );
+        ImGui::SliderFloat( "Outline depth inside", &_sdf.outlineDepth.y, 0.0f, 0.5f );
+                
+        _sdf.outlineColor = sf::Color(
+            ( sf::Uint8 )( outlineColor.x * 255.0f ),
+            ( sf::Uint8 )( outlineColor.y * 255.0f ),
+            ( sf::Uint8 )( outlineColor.z * 255.0f ),
+            ( sf::Uint8 )( outlineColor.w * 255.0f ) );
+
+        ImGui::Checkbox( "Glow", &_sdf.glow );
+        sf::Glsl::Vec4 glowColor( _sdf.glowColor );
+        ImGui::ColorEdit4( "Glow color", &glowColor.x , ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_Uint8 );
+        ImGui::SliderFloat2( "Glow offset", &_sdf.glowOffset.x, -0.5f, 0.5f, "%.5f" );
+        ImGui::SliderFloat( "Glow strength", &_sdf.glowStrength, 0.0f, 1.0f );
+        
+        _sdf.glowColor = sf::Color(
+            ( sf::Uint8 )( glowColor.x * 255.0f ),
+            ( sf::Uint8 )( glowColor.y * 255.0f ),
+            ( sf::Uint8 )( glowColor.z * 255.0f ),
+            ( sf::Uint8 )( glowColor.w * 255.0f ) );
     }
 
     void ViewMode( int& _viewMode )
