@@ -14,8 +14,8 @@ The interface is done thanks to ImGui and ImGui SFML.
 ## Build 
 
 ### Install SFML
-To install the SFML on your system, there is a 
-[tutorial](https://www.sfml-dev.org/tutorials/2.5/start-linux.php) provided.
+To install the SFML on your system, there are 
+[tutorials](https://www.sfml-dev.org/tutorials/2.5/#top) provided.
 
 ### Linux
 Once the repository is cloned or copied :
