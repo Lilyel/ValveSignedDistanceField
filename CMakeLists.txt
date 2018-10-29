@@ -4,7 +4,6 @@
 cmake_minimum_required (VERSION 3.0)
 set(CMAKE_CXX_STANDARD 11)
 
-# 
 
 project (ValveSignedDistanceField)
 
@@ -14,10 +13,9 @@ if(MSVC)
 	add_compile_options(/W3 /WX)
 else(MSVC)
 	add_compile_options(-Wall -Wextra -pedantic -Werror)
-	# Visual doesn't seems to need it, but linux need path to tell him where SFML is.
-	# A environment variable SFML_ROOT can be set to the directory if needed.
-	set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/Modules")
 endif(MSVC)
+
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/Modules")
 
 
 # Look for SFML.
@@ -43,4 +41,4 @@ add_executable(ValveSignedDistanceField ${SRC_FILES} ${IMGUI_SRC_FILES})
 
 # Link dependencies libs.
 #set_target_properties(target_link_libraries(SFMLTest sfml-graphics sfml-audio) PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries(ValveSignedDistanceField sfml-graphics sfml-system sfml-window ${OPENGL_LIBRARIES})
+target_link_libraries(ValveSignedDistanceField ${SFML_LIBRARIES} ${OPENGL_LIBRARIES})

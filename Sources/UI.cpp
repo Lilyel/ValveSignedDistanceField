@@ -67,7 +67,7 @@ namespace ui
         sf::Glsl::Vec4 glowColor( _sdf.glowColor );
         ImGui::ColorEdit4( "Glow color", &glowColor.x , ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_Uint8 );
         ImGui::SliderFloat2( "Glow offset", &_sdf.glowOffset.x, -0.5f, 0.5f, "%.5f" );
-        ImGui::SliderFloat( "Glow strength", &_sdf.glowStrength, 0.0f, 1.0f );
+        ImGui::SliderFloat( "Glow strength", &_sdf.glowStrength, 0.0f, 2.0f );
         
         _sdf.glowColor = sf::Color(
             ( sf::Uint8 )( glowColor.x * 255.0f ),

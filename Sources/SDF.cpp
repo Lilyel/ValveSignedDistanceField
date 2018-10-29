@@ -14,7 +14,7 @@ SDF::SDF() :
     glow( false ),
     glowColor( sf::Color::Black ),
     glowOffset( 0.0f, 0.0f ),
-    glowStrength( 0.5f )
+    glowStrength( 1.0f )
 {
 }
 
