@@ -29,7 +29,7 @@ make
 
 ### Windows
 
-### Using Visual Studio tool
+#### Using Visual Studio tool
 You can install the SFML in the ``Program Files`` and the ``Program Files (x86)`` directory directly,
 r set the environment variable ``SFML_ROOT`` where you installed the SFML (or simply set this variable via CMake).
 
