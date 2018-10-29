@@ -29,9 +29,8 @@ make
 
 ### Windows
 
-#### Using Visual Studio tool
 You can install the SFML in the ``Program Files`` and the ``Program Files (x86)`` directory directly,
-r set the environment variable ``SFML_ROOT`` where you installed the SFML (or simply set this variable via CMake).
+or set the environment variable ``SFML_ROOT`` where you installed the SFML (or simply set this variable via CMake).
 
 __Attention__ : if the ``bin`` folder of the SFML isn't in your ``path`` environment variable, don't forget
 to copy the ``.dll`` files next to your executable.
@@ -41,6 +40,7 @@ This demo needs the following ``.dll`` :
 - ``sfml-window-2`` (``sfml-window-d-2`` for the debug).
 - ``sfml-system-2`` (``sfml-system-d-2`` for the debug).
 
+#### Using Visual Studio tool
 
 If you have installed the ``Visual C++ tools for CMake`` component for Visual Studio, you can directly
 open the cloned or copied folder in Visual Studio.
