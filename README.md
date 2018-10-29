@@ -9,7 +9,7 @@ Requierements for the demo :
 - [SFML](https://www.sfml-dev.org/index.php) ( version > 2 )
 - C++ 11
 
-The interface is done thanks to ImGui and ImGui SFML.
+The interface is done thanks to [ImGui](https://github.com/ocornut/imgui) and [ImGui SFML](https://github.com/eliasdaler/imgui-sfml).
 
 ## Build 
 
