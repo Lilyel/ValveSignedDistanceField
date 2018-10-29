@@ -32,7 +32,7 @@ make
 You can install the SFML in the ``Program Files`` and the ``Program Files (x86)`` directory directly,
 or set the environment variable ``SFML_ROOT`` where you installed the SFML (or simply set this variable via CMake).
 
-__Attention__ : if the ``bin`` folder of the SFML isn't in your ``path`` environment variable, don't forget
+__Caution__ : if the ``bin`` folder of the SFML isn't in your ``path`` environment variable, don't forget
 to copy the ``.dll`` files next to your executable.
 
 This demo needs the following ``.dll`` :
@@ -49,7 +49,7 @@ If you haven't set ``SFML_ROOT`` as an environment variable or installed SFML in
 directories, you can specify the path to SFML inside the ``CMakeSettings.json`` file by adding
 a ``variable``.
 
-Below an example if the SFML folder was beside the cloned or copied repository (see the ``variables`` part) : 
+Below is an example of what to do if the SFML folder is nest to the cloned or copied repository see the ``variables`` part) :
 ```json
 "name": "x64-Release",
 "generator": "Ninja",
@@ -72,9 +72,10 @@ Below an example if the SFML folder was beside the cloned or copied repository (
 
 #### Using CMake
 
-Here an example for build and execute the project with Visual Studio in 64 bits 
+Here is an example to build and execute the project with Visual Studio in 64 bits 
 and in release mode :
 ```bash
+cd ValveSignedDistanceField
 mkdir build
 cd build
 # Generate Visual Studio 2017 project files (64 bits).
@@ -93,4 +94,4 @@ cmake -G "Visual Studio 15 2017 Win64" -DSFML_ROOT=YOUR_PATH_TO_SFML ..
 
 ### MacOS
 Unfortunately, I don't have a Mac so I can't test it, 
-but the SFML and ImGui works on MacOS, so hopefuly, this project too.
+but the SFML and ImGui work on MacOS, so hopefuly, this project too.
