@@ -17,7 +17,7 @@ static const std::string DATA_PATH = "../../Data/";
 static const std::string DATA_PATH = "../Data/";
 #endif
 
-#define HIGH_DPI
+//#define HIGH_DPI
 #ifdef HIGH_DPI
 static constexpr unsigned int WINDOW_SIZE_X = 2800;
 static constexpr unsigned int WINDOW_SIZE_Y = 1900;
