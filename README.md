@@ -49,7 +49,7 @@ If you haven't set ``SFML_ROOT`` as an environment variable or installed SFML in
 directories, you can specify the path to SFML inside the ``CMakeSettings.json`` file by adding
 a ``variable``.
 
-Below is an example of what to do if the SFML folder is nest to the cloned or copied repository see the ``variables`` part) :
+Below is an example of what to do if the SFML folder is next to the cloned or copied repository see the ``variables`` part) :
 ```json
 "name": "x64-Release",
 "generator": "Ninja",
